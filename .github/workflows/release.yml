@@ -19,18 +19,18 @@ jobs:
           - goos: windows
             goarch: amd64
             suffix: .exe
-          - goos: windows
-            goarch: arm64
-            suffix: .exe
+          # - goos: windows
+          #   goarch: arm64
+          #   suffix: .exe
           - goos: linux
             goarch: amd64
             suffix: ""
           - goos: darwin
             goarch: amd64
             suffix: ""
-          - goos: darwin
-            goarch: arm64
-            suffix: ""
+          # - goos: darwin
+          #   goarch: arm64
+          #   suffix: ""
 
     steps:
       - uses: actions/checkout@v4
