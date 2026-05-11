@@ -100,6 +100,47 @@ func TestHandleFile_Copy(t *testing.T) {
 	}
 }
 
+func TestFilesIdentical(t *testing.T) {
+	dir := t.TempDir()
+	a := filepath.Join(dir, "a.txt")
+	b := filepath.Join(dir, "b.txt")
+	c := filepath.Join(dir, "c.txt")
+
+	os.WriteFile(a, []byte("same content"), 0o644)
+	os.WriteFile(b, []byte("same content"), 0o644)
+	os.WriteFile(c, []byte("different"), 0o644)
+
+	if !filesIdentical(a, b) {
+		t.Error("expected identical files to be equal")
+	}
+	if filesIdentical(a, c) {
+		t.Error("expected different files to not be equal")
+	}
+	if filesIdentical(a, filepath.Join(dir, "nonexistent.txt")) {
+		t.Error("expected missing destination to return false")
+	}
+}
+
+func TestHandleFile_SkipIdentical(t *testing.T) {
+	dir := t.TempDir()
+	dst := t.TempDir()
+
+	content := []byte("same content")
+	src := filepath.Join(dir, "doc.txt")
+	dstFile := filepath.Join(dst, "doc.txt")
+	os.WriteFile(src, content, 0o644)
+	os.WriteFile(dstFile, content, 0o644)
+
+	cfg := Config{Src: dir, Dst: dst, Exts: []string{".txt"}}
+	if err := handleFile(src, cfg); err != nil {
+		t.Fatal(err)
+	}
+	// Source must still exist (no copy/delete triggered)
+	if _, err := os.Stat(src); err != nil {
+		t.Errorf("source file should still exist: %v", err)
+	}
+}
+
 func TestHandleFile_Delete(t *testing.T) {
 	dir := t.TempDir()
 	dst := t.TempDir()
