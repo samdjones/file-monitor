@@ -68,6 +68,28 @@ func matchesFilter(path string, exts []string) bool {
 	return false
 }
 
+// processExistingFiles scans the source directory for existing files matching the filter and processes them.
+func processExistingFiles(src string, cfg Config) {
+	entries, err := os.ReadDir(src)
+	if err != nil {
+		log.Printf("Warning: could not scan existing files in %q: %v", src, err)
+		return
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		filePath := filepath.Join(src, entry.Name())
+		if matchesFilter(filePath, cfg.Exts) {
+			log.Printf("Processing existing file: %q", entry.Name())
+			if err := handleFileWithRetry(filePath, cfg); err != nil {
+				log.Printf("Error processing existing file: %v", err)
+			}
+		}
+	}
+}
+
 func hashFile(path string) ([]byte, error) {
 	f, err := os.Open(path)
 	if err != nil {

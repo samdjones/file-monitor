@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -12,6 +13,40 @@ import (
 
 // findVolumeByLabel searches for a mounted volume with the given label.
 func findVolumeByLabel(label string) string {
+	if runtime.GOOS == "darwin" {
+		// On macOS, volumes are mounted in /Volumes/
+		volumesDir := "/Volumes"
+		entries, err := os.ReadDir(volumesDir)
+		if err != nil {
+			log.Printf("Error reading /Volumes: %v", err)
+			return ""
+		}
+		for _, entry := range entries {
+			if entry.IsDir() && entry.Name() == label {
+				return filepath.Join(volumesDir, entry.Name())
+			}
+		}
+		return ""
+	}
+
+	if runtime.GOOS == "linux" {
+		// On Linux, check common mount points
+		searchDirs := []string{"/mnt", "/media"}
+		for _, searchDir := range searchDirs {
+			entries, err := os.ReadDir(searchDir)
+			if err != nil {
+				continue
+			}
+			for _, entry := range entries {
+				if entry.IsDir() && entry.Name() == label {
+					return filepath.Join(searchDir, entry.Name())
+				}
+			}
+		}
+		return ""
+	}
+
+	// Windows: check C: through Z: drives
 	for drive := 'C'; drive <= 'Z'; drive++ {
 		path := string(drive) + ":\\"
 		if info, err := os.Stat(path); err == nil && info.IsDir() {
@@ -26,6 +61,11 @@ func findVolumeByLabel(label string) string {
 // getVolumeLabel returns the volume label (name) of a mounted volume.
 func getVolumeLabel(mountPoint string) string {
 	if _, err := os.Stat(mountPoint); err == nil {
+		if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
+			// On macOS and Linux, the volume name is the directory name
+			return filepath.Base(mountPoint)
+		}
+		// Windows uses filepath.VolumeName
 		return filepath.VolumeName(mountPoint)
 	}
 	return ""
@@ -60,14 +100,14 @@ func runMonitor(src, dst, destVolumeName, destVolumePath, ext string, del, renam
 	}
 
 	cfg := Config{
-		Src:              src,
-		Dst:              actualDst,
-		DestVolumeName:   destVolumeName,
-		DestVolumePath:   destVolumePath,
-		Exts:             exts,
-		Delete:           del,
-		Rename:           rename,
-		Pattern:          pattern,
+		Src:            src,
+		Dst:            actualDst,
+		DestVolumeName: destVolumeName,
+		DestVolumePath: destVolumePath,
+		Exts:           exts,
+		Delete:         del,
+		Rename:         rename,
+		Pattern:        pattern,
 	}
 
 	watcher, err := fsnotify.NewWatcher()
@@ -145,7 +185,7 @@ func runWithVolume(volumeName, volumePath, dst, destVolumeName, destVolumePath, 
 	}
 
 	if info, err := os.Stat(src); err != nil || !info.IsDir() {
-		log.Fatalf("Error: volume path %q does not exist or is not a directory\n", src)
+		log.Printf("Warning: volume path %q does not exist or is not a directory yet", src)
 	}
 
 	var actualDst string
@@ -171,14 +211,14 @@ func runWithVolume(volumeName, volumePath, dst, destVolumeName, destVolumePath, 
 	}
 
 	cfg := Config{
-		Src:              src,
-		Dst:              actualDst,
-		DestVolumeName:   destVolumeName,
-		DestVolumePath:   destVolumePath,
-		Exts:             exts,
-		Delete:           del,
-		Rename:           rename,
-		Pattern:          pattern,
+		Src:            src,
+		Dst:            actualDst,
+		DestVolumeName: destVolumeName,
+		DestVolumePath: destVolumePath,
+		Exts:           exts,
+		Delete:         del,
+		Rename:         rename,
+		Pattern:        pattern,
 	}
 
 	watcher, err := fsnotify.NewWatcher()

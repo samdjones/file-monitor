@@ -9,17 +9,20 @@ import (
 
 // Config holds the runtime configuration for the monitor.
 type Config struct {
-	Src              string
-	Dst              string
-	DestVolumeName   string
-	DestVolumePath   string
-	Exts             []string
-	Delete           bool
-	Rename           bool
-	Pattern          string
+	Src            string
+	Dst            string
+	DestVolumeName string
+	DestVolumePath string
+	Exts           []string
+	Delete         bool
+	Rename         bool
+	Pattern        string
 }
 
 func monitor(watcher *fsnotify.Watcher, cfg Config) {
+	// Process any existing files first
+	processExistingFiles(cfg.Src, cfg)
+
 	for {
 		select {
 		case event, ok := <-watcher.Events:
@@ -43,6 +46,9 @@ func monitor(watcher *fsnotify.Watcher, cfg Config) {
 
 // monitorWithDestVolume monitors with support for a removable destination volume.
 func monitorWithDestVolume(watcher *fsnotify.Watcher, cfg Config) {
+	// Process any existing files first
+	processExistingFiles(cfg.Src, cfg)
+
 	for {
 		select {
 		case event, ok := <-watcher.Events:
