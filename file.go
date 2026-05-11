@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
@@ -24,6 +25,11 @@ func handleFile(path string, cfg Config) error {
 
 	dstName := buildDstName(filepath.Base(path), cfg)
 	dstPath := filepath.Join(cfg.Dst, dstName)
+
+	if filesIdentical(path, dstPath) {
+		log.Printf("Skipped %q (identical to destination)", filepath.Base(path))
+		return nil
+	}
 
 	if err := copyFile(path, dstPath); err != nil {
 		return fmt.Errorf("copy %q to %q: %w", path, dstPath, err)
@@ -60,6 +66,39 @@ func matchesFilter(path string, exts []string) bool {
 		}
 	}
 	return false
+}
+
+func hashFile(path string) ([]byte, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return nil, err
+	}
+	return h.Sum(nil), nil
+}
+
+func filesIdentical(src, dst string) bool {
+	dstHash, err := hashFile(dst)
+	if err != nil {
+		return false
+	}
+	srcHash, err := hashFile(src)
+	if err != nil {
+		return false
+	}
+	if len(srcHash) != len(dstHash) {
+		return false
+	}
+	for i := range srcHash {
+		if srcHash[i] != dstHash[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func copyFile(src, dst string) (retErr error) {
@@ -102,6 +141,11 @@ func handleFileWithRetry(path string, cfg Config) error {
 
 	for {
 		dstPath := filepath.Join(cfg.Dst, dstName)
+
+		if filesIdentical(path, dstPath) {
+			log.Printf("Skipped %q (identical to destination)", filepath.Base(path))
+			return nil
+		}
 
 		if err := copyFile(path, dstPath); err == nil {
 			log.Printf("Copied  %q → %q", filepath.Base(path), dstPath)
