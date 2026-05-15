@@ -58,18 +58,6 @@ func findVolumeByLabel(label string) string {
 	return ""
 }
 
-// getVolumeLabel returns the volume label (name) of a mounted volume.
-func getVolumeLabel(mountPoint string) string {
-	if _, err := os.Stat(mountPoint); err == nil {
-		if runtime.GOOS == "darwin" || runtime.GOOS == "linux" {
-			// On macOS and Linux, the volume name is the directory name
-			return filepath.Base(mountPoint)
-		}
-		// Windows uses filepath.VolumeName
-		return filepath.VolumeName(mountPoint)
-	}
-	return ""
-}
 
 // runMonitor handles standard directory monitoring with optional destination volume.
 func runMonitor(src, dst, destVolumeName, destVolumePath, ext string, del, rename bool, pattern string) {
