@@ -56,7 +56,16 @@ func main() {
 			fmt.Fprintln(os.Stderr, "Error: cannot use -src with -volume-name")
 			os.Exit(1)
 		}
-		runWithVolume(*volumeName, *volumePath, *dst, *destVolumeName, *destVolumePath, *ext, *del, *rename, *pattern)
+		run := func() {
+			runWithVolume(*volumeName, *volumePath, *dst, *destVolumeName, *destVolumePath, *ext, *del, *rename, *pattern)
+		}
+		if isService() {
+			if err := runService(run); err != nil {
+				log.Fatalf("Service error: %v", err)
+			}
+			return
+		}
+		run()
 		return
 	}
 
@@ -67,5 +76,14 @@ func main() {
 		os.Exit(1)
 	}
 
-	runMonitor(*src, *dst, *destVolumeName, *destVolumePath, *ext, *del, *rename, *pattern)
+	run := func() {
+		runMonitor(*src, *dst, *destVolumeName, *destVolumePath, *ext, *del, *rename, *pattern)
+	}
+	if isService() {
+		if err := runService(run); err != nil {
+			log.Fatalf("Service error: %v", err)
+		}
+		return
+	}
+	run()
 }

@@ -144,7 +144,7 @@ sc create FileMonitor ^
   DisplayName= "File Monitor"
 ```
 
-> Do not wrap with `cmd /c` for logging — `cmd.exe` does not implement the Windows Service handshake and the service will fail to start (error 1053).
+> Do not wrap with `cmd /c` — `cmd.exe` does not implement the Windows Service handshake and the service will fail to start (error 1053).
 
 **Examples:**
 
