@@ -111,7 +111,59 @@ file-monitor -volume-name CAMERA -volume-path DCIM -dest-volume-name BACKUP -ext
 
 ### Running as a Windows service
 
-You can wrap `file-monitor` with [NSSM](https://nssm.cc/) or the built-in `sc` command to run it as a background Windows service.
+Use the built-in `sc` command to install file-monitor as a Windows service that starts at boot and runs for all users. Run these commands in an **Administrator** Command Prompt.
+
+**Install and start:**
+
+```cmd
+sc create FileMonitor ^
+  binPath= "\"C:\Path\To\file-monitor.exe\" -volume-name GardePro -dst C:\photos -ext .jpg" ^
+  start= auto ^
+  DisplayName= "File Monitor"
+sc start FileMonitor
+```
+
+> Note the space after `binPath=` and `start=` — this is required by `sc`.
+
+**Common management commands:**
+
+```cmd
+sc start FileMonitor      :: start the service
+sc stop FileMonitor       :: stop the service
+sc query FileMonitor      :: check running status
+sc delete FileMonitor     :: uninstall the service
+```
+
+**With logging** — pipe output to a log file by wrapping in `cmd /c`:
+
+```cmd
+sc create FileMonitor ^
+  binPath= "cmd /c \"C:\Path\To\file-monitor.exe\" -volume-name GardePro -dst C:\photos -ext .jpg >> C:\logs\filemonitor.log 2>&1" ^
+  start= auto ^
+  DisplayName= "File Monitor"
+```
+
+**Examples:**
+
+Copy `.jpg` files from a GardePro memory card to `C:\photos` whenever the card is inserted:
+
+```cmd
+sc create FileMonitor ^
+  binPath= "\"C:\Path\To\file-monitor.exe\" -volume-name GardePro -volume-path DCIM -dst C:\photos -ext .jpg" ^
+  start= auto ^
+  DisplayName= "File Monitor"
+```
+
+Move and rename files from any inserted CAMERA card to a BACKUP drive (both removable):
+
+```cmd
+sc create FileMonitor ^
+  binPath= "\"C:\Path\To\file-monitor.exe\" -volume-name CAMERA -volume-path DCIM -dest-volume-name BACKUP -ext .jpg -delete -rename" ^
+  start= auto ^
+  DisplayName= "File Monitor"
+```
+
+The service runs as `LocalSystem` by default, which can detect and access all physically inserted drives regardless of which user is logged in.
 
 ## Development
 
