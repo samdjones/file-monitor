@@ -59,6 +59,7 @@ file-monitor -src <source-dir> -dest-volume-name <volume-label> [options]
 | `-delete` | `false` | Delete source file after a successful copy |
 | `-rename` | `false` | Append a datetime suffix to copied filenames |
 | `-pattern` | `20060102_150405` | Go time format string used for the datetime suffix |
+| `-log-file` | | Write log output to this file (use instead of shell redirection when running as a service) |
 | `-version` | | Print version and exit |
 
 ### Examples
@@ -134,14 +135,16 @@ sc query FileMonitor      :: check running status
 sc delete FileMonitor     :: uninstall the service
 ```
 
-**With logging** — pipe output to a log file by wrapping in `cmd /c`:
+**With logging** — use the `-log-file` flag to write output directly to a file:
 
 ```cmd
 sc create FileMonitor ^
-  binPath= "cmd /c \"C:\Path\To\file-monitor.exe\" -volume-name GardePro -dst C:\photos -ext .jpg >> C:\logs\filemonitor.log 2>&1" ^
+  binPath= "\"C:\Path\To\file-monitor.exe\" -volume-name GardePro -dst C:\photos -ext .jpg -log-file C:\logs\filemonitor.log" ^
   start= auto ^
   DisplayName= "File Monitor"
 ```
+
+> Do not wrap with `cmd /c` for logging — `cmd.exe` does not implement the Windows Service handshake and the service will fail to start (error 1053).
 
 **Examples:**
 

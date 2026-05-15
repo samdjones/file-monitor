@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
@@ -20,7 +21,18 @@ func main() {
 	volumePath := flag.String("volume-path", "", "Subdirectory on the volume to monitor (default: root)")
 	destVolumeName := flag.String("dest-volume-name", "", "Wait for destination volume with this label; syncing starts when mounted")
 	destVolumePath := flag.String("dest-volume-path", "", "Subdirectory on the destination volume (default: root)")
+	logFile := flag.String("log-file", "", "Write log output to this file instead of stdout (useful when running as a Windows service)")
 	flag.Parse()
+
+	if *logFile != "" {
+		f, err := os.OpenFile(*logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o644)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error opening log file: %v\n", err)
+			os.Exit(1)
+		}
+		defer f.Close()
+		log.SetOutput(f)
+	}
 
 	if *ver {
 		fmt.Println("file-monitor", version)
